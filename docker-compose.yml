@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  # Сервис для PostgreSQL
+  db:
+    image: postgres:13
+    container_name: chat-db
+    environment:
+      POSTGRES_PASSWORD: postgres  # Пароль для БД
+      POSTGRES_DB: chatdb         # Название БД
+    volumes:
+      - postgres_data:/var/lib/postgresql/data  # Сохраняем данные БД
+    ports:
+      - "5432:5432"  # Пробрасываем порт для локального подключения
+
+  # Сервис для нашего сервера
+  server:
+    build:
+      context: .  # Контекст сборки - текущая директория
+      dockerfile: Dockerfile.server  # Используем наш Dockerfile
+    container_name: chat-server
+    depends_on:
+      - db  # Зависит от сервиса db
+    ports:
+      - "8080:8080"  # Пробрасываем порт сервера
+    environment:
+      DATABASE_URL: jdbc:postgresql://db:5432/chatdb
+      DATABASE_USERNAME: postgres
+      DATABASE_PASSWORD: postgres
+    # Ждем пока БД станет доступна
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+# Том для хранения данных БД
+volumes:
+  postgres_data:
