@@ -1,0 +1,13 @@
+server:
+  port: 8081
+
+database:
+  url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/chatdb}
+  username: ${DATABASE_USERNAME:postgres}
+  password: ${DATABASE_PASSWORD:postgres}
+  driver: org.postgresql.Driver
+
+logging:
+  level:
+    root: INFO
+    server: DEBUG
