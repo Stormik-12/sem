@@ -1,3 +1,5 @@
+package server.model;
+
 import javax.persistence.*;
 import java.time.LocalDateTime;
 

@@ -1,32 +1,40 @@
-public class ChatClient {
-    private static final Logger logger = LoggerFactory.getLogger(ChatClient.class);
-    private static final ObjectMapper mapper = new ObjectMapper();
-
-    private Socket socket;
+public class ChatClient extends Application {
     private PrintWriter out;
-    private BufferedReader in;
 
-    public void connect(String host, int port) throws IOException {
-        socket = new Socket(host, port);
-        out = new PrintWriter(socket.getOutputStream(), true);
-        in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-        logger.info("Connected to server");
-    }
+    @Override
+    public void start(Stage stage) {
+        TextField messageField = new TextField();
+        Button sendButton = new Button("Send");
+        TextArea chatArea = new TextArea();
 
-    public void login(String username, String password) throws IOException {
-        JsonNode request = mapper.createObjectNode()
-                .put("type", "login")
-                .put("username", username)
-                .put("password", password);
+        sendButton.setOnAction(e -> {
+            out.println(messageField.getText());
+            messageField.clear();
+        });
 
-        out.println(request.toString());
-        String response = in.readLine();
-        JsonNode jsonResponse = mapper.readTree(response);
+        // Подключение к серверу
+        try {
+            Socket socket = new Socket("localhost", 8081);
+            out = new PrintWriter(socket.getOutputStream(), true);
 
-        if (!jsonResponse.get("success").asBoolean()) {
-            throw new IOException(jsonResponse.get("message").asText());
+            new Thread(() -> {
+                try (BufferedReader in = new BufferedReader(
+                        new InputStreamReader(socket.getInputStream()))) {
+                    String response;
+                    while ((response = in.readLine()) != null) {
+                        Platform.runLater(() ->
+                                chatArea.appendText(response + "\n"));
+                    }
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                }
+            }).start();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-    }
 
-    // Аналогичные методы для регистрации и отправки сообщений
+        Scene scene = new Scene(new VBox(10, chatArea, messageField, sendButton), 400, 300);
+        stage.setScene(scene);
+        stage.show();
+    }
 }
